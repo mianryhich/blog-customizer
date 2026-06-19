@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-
+import { useState, useRef } from 'react';
+import { useCloseOnOutsideClickOrEsc } from 'src/components/article-params-form/hooks/useCloseOnOutsideClickOrEsc'
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
 import { Select } from 'src/ui/select';
@@ -20,28 +20,41 @@ import {
 	defaultArticleState,
 } from 'src/constants/articleProps';
 
-export const ArticleParamsForm = ({
-	isOpen,
-	onClick,
-	formState,
-	setFormState,
-	onApplay,
-}: {
-	isOpen: boolean;
-	onClick: () => void;
-	formState: ArticleStateType;
-	setFormState: (state: ArticleStateType) => void;
-	onApplay: (state: ArticleStateType) => void;
-}) => {
+type ArticleParamsFormProps = {
+	onApply: (state: ArticleStateType) => void;
+};
+
+export const ArticleParamsForm = ({ onApply }: ArticleParamsFormProps) => {
+	const [formState, setFormState] = useState<ArticleStateType>(defaultArticleState);
+	const [isFormOpen, setIsFormOpen] = useState(false);
+
 	const sidebarRef = useRef<HTMLDivElement>(null);
+
+	const toggleForm = () => setIsFormOpen(!isFormOpen);
+
+	useCloseOnOutsideClickOrEsc({
+	    isOpenElement: isFormOpen,
+	    elementRef: sidebarRef,
+	    onClose: () => setIsFormOpen(false),
+	});
 
 	return (
 		<>
-			<ArrowButton isOpen={isOpen} onClick={onClick} />
+			<ArrowButton isOpen={isFormOpen} onClick={toggleForm} />
 			<aside
 				ref={sidebarRef}
-				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
-				<form className={styles.form}>
+				className={clsx(styles.container, { [styles.container_open]: isFormOpen })}>
+				<form
+					className={styles.form}
+					onSubmit={(e) => {
+						e.preventDefault();
+						onApply(formState);
+					}}
+					onReset={(e) => {
+    				    e.preventDefault();
+    				    setFormState(defaultArticleState);
+    				    onApply(defaultArticleState);
+    				}}>
 					<Text size={31} weight={800} uppercase>
 						Задайте параметры
 					</Text>
@@ -92,16 +105,11 @@ export const ArticleParamsForm = ({
 							title='Сбросить'
 							htmlType='reset'
 							type='clear'
-							onClick={() => {
-								setFormState(defaultArticleState);
-								onApplay(defaultArticleState);
-							}}
 						/>
 						<Button
 							title='Применить'
-							htmlType='button'
+							htmlType='submit'
 							type='apply'
-							onClick={() => onApplay(formState)}
 						/>
 					</div>
 				</form>
